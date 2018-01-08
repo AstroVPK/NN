@@ -1,6 +1,6 @@
 #pragma once
 
-struct convLayerCache_ {
+typedef struct convLayerCache_ {
   int      M;              // Mini-batch size
   int      RMinus;         // Number of rows in l-1 th layer activations
   int      R;              // Number of rows in l th layer activations
@@ -11,22 +11,32 @@ struct convLayerCache_ {
   int      K;              // Number of filters in layer l
   int      S;              // Stride
   int      P;              // Padding
-  double  *W;              // Filter bank : F X F X KMinus X K dimensional
-  double  *b;              // Bias bank   : K dimensional
-  double  *Z;              // Intermediate: R X C X K
-  double  *dZ;             // Intermediate: R X C X K
+  double  *W;              // Filter bank          : F X F X KMinus X K dimensional
+  double  *dW;             // Filter bank gradient : F X F X KMinus X K dimensional
+  double  *b;              // Bias bank            : K dimensional
+  double  *db;             // Bias bank gradient   : K dimensional
+  double  *Z;              // Intermediate         : R X C X K
+  double  *dZ;             // Intermediate         : R X C X K
 } convLayerCache;
 
-void init_convLayerCache(int M, int RMinus, int CMinus, int F, int KMinus, int K, int S, int P, convLayerCache *cache);
+void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K, int S, int P, convLayerCache *cache);
 
 void malloc_convLayerCache(convLayerCache *cache);
 
 void free_convLayerCache(convLayerCache *cache);
 
-void malloc_convLayerOutput(double **A_l, convLayerCache *cache);
+void malloc_convLayerOutput(double **A_l, double **dA_l, convLayerCache *cache);
 
-void free_convLayerOutput(double *A_l);
+void free_convLayerOutput(double *A_l, double *dA_l);
 
-void forwardConvolution(double *A_lMinus, double *A_l, ConvLayerCache *cache);
+void malloc_convLayerInput(double **A_lMinus, double **dA_lMinus, convLayerCache *cache);
 
-void backwardConvolution(double *dA_l, double *dA_lMinus, dW_l, db_l, ConvLayerCache *cache);
+void free_convLayerInput(double *A_lMinus, double *dA_lMinus);
+
+void forwardConvolution1X1(double *A_lMinus, double *A_l, convLayerCache *cache);
+
+void backwardConvolution1X1(double *A_lMinus, double *dA_l, double *dA_lMinus, convLayerCache *cache);
+
+void forwardConvolution(double *A_lMinus, double *A_l, convLayerCache *cache);
+
+void backwardConvolution(double *A_lMinus, double *dA_l, double *dA_lMinus, convLayerCache *cache);

@@ -1,4 +1,4 @@
-#include "activations.h"
+#include "activation.h"
 
 double forwardReLU(double input) {
   return (input > 0.0) ? input : 0.0;
