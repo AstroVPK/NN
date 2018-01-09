@@ -36,7 +36,7 @@ int main() {
 
 #ifdef TEST
 
-  double epsilon = 1.0e-9, loss, loss_minus, loss_plus;
+  double epsilon = 1.0e-9, loss, loss_minus, loss_plus, bpGrad, fdGrad;
 
   const gsl_rng_type *rngT;
   gsl_rng *rngR;
@@ -77,28 +77,54 @@ int main() {
     labelList[m*cache.R*cache.C*cache.K + 0] = 1.0; // Every train vector is of the same category!
   }
 
-  // Test dW
-  //Perform forward convolution & compute loss.
+  // Perform forward convolution, compute loss & perform back prop
+  printf("Computing grads via back prop...\n");
   forwardConvolution1X1(A_0, A_1, &cache);
   loss = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
   crossEntropyBackward(cache.R*cache.C*cache.K, cache.M, A_1, labelList, dA_1);
   backwardConvolution1X1(A_0, dA_1, dA_0, &cache);
-  double bpGrad = cache.dW[0 + cache.K*1];
-  printf(" Loss: %17.16e\n", loss);
+  printf("          Loss: %17.16e\n", loss);
 
+  printf("Computing grads for dW via finite diff...\n");
   // Now lets perturb W[1,0]
   cache.W[0 + cache.K*1] += epsilon;
   forwardConvolution1X1(A_0, A_1, &cache);
   loss_plus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
-  printf("Loss+: %17.16e\n", loss_plus);
-
-  // Now lets perturb W[1,0] again
+  // Now lets perturb W[1,0] again in the opposite direction.
   cache.W[0 + cache.K*1] -= 2.0*epsilon;
   forwardConvolution1X1(A_0, A_1, &cache);
   loss_minus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
-  printf("Loss-: %17.16e\n", loss_minus);
+  bpGrad = cache.dW[0 + cache.K*1];
+  fdGrad = (loss_plus - loss_minus)/(2.0*epsilon);
+  printf("  Back Prop Grad: %17.16e\n", bpGrad);
+  printf("Finite Diff Grad: %17.16e\n", fdGrad);
 
-  double fdGrad = (loss_plus - loss_minus)/(2.0*epsilon);
+  printf("Computing grads for db via finite diff...\n");
+  // Now lets perturb b[0]
+  cache.b[0] += epsilon;
+  forwardConvolution1X1(A_0, A_1, &cache);
+  loss_plus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
+  // Now lets perturb W[1,0] again in the opposite direction.
+  cache.b[0] -= 2.0*epsilon;
+  forwardConvolution1X1(A_0, A_1, &cache);
+  loss_minus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
+  bpGrad = cache.db[0];
+  fdGrad = (loss_plus - loss_minus)/(2.0*epsilon);
+  printf("  Back Prop Grad: %17.16e\n", bpGrad);
+  printf("Finite Diff Grad: %17.16e\n", fdGrad);
+
+  printf("Computing grads for dA_lMinus via finite diff...\n");
+  // Now lets perturb b[0]
+
+  A_0[0 + cache.KMinus*(0 + cache.CMinus*(0 + cache.RMinus*0))] += epsilon;
+  forwardConvolution1X1(A_0, A_1, &cache);
+  loss_plus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
+  // Now lets perturb W[1,0] again in the opposite direction.
+  A_0[0 + cache.KMinus*(0 + cache.CMinus*(0 + cache.RMinus*0))] -= 2.0*epsilon;
+  forwardConvolution1X1(A_0, A_1, &cache);
+  loss_minus = crossEntropyForward(cache.R*cache.C*cache.K, cache.M, A_1, labelList);
+  bpGrad = dA_0[0 + cache.KMinus*(0 + cache.CMinus*(0 + cache.RMinus*0))];
+  fdGrad = (loss_plus - loss_minus)/(2.0*epsilon);
   printf("  Back Prop Grad: %17.16e\n", bpGrad);
   printf("Finite Diff Grad: %17.16e\n", fdGrad);
 
