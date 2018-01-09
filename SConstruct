@@ -35,7 +35,7 @@ Todo:
 
 env = Environment(CPPPATH=['include/'])
 env.Program('testConvolution', Glob('src/*.c'))
-env.Append(LIBS=['m'])
+env.Append(LIBS=['gsl', 'gslcblas', 'm'])
 Repository('.')
 env.Append(CCFLAGS='-O0 -Wall -g')
 if ARGUMENTS.get('debug', 0):

@@ -3,6 +3,7 @@
 #include "convolution.h"
 #include "pad.h"
 
+/*
 void malloc_convLayerInputPad(double **A_lMinusPad, double **dA_lMinusPad, convLayerCache *cache) {
   int m, r, c, k;
   free_convLayerOutput(*A_lMinusPad, *dA_lMinusPad);
@@ -86,3 +87,4 @@ void unpad(double *A_lPad, double *dA_lPad, double *A_l, double *dA_l, convLayer
     }
   }
 }
+*/

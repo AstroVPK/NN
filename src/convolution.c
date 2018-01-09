@@ -6,7 +6,7 @@
 #include "convolution.h"
 
 
-void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K, int S, int P, convLayerCache *cache) {
+void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K, int S, convLayerCache *cache) {
   cache->M = M;
   cache->RMinus = RMinus;
   cache->CMinus = CMinus;
@@ -14,9 +14,8 @@ void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K
   cache->KMinus = KMinus;
   cache->K = K;
   cache->S = S;
-  cache->P = P;
-  cache->R = (int)floor(((double)(cache->RMinus + 2*cache->P - cache->F)/cache->S) + 1.0);
-  cache->C = (int)floor(((double)(cache->CMinus + 2*cache->P - cache->F)/cache->S) + 1.0);
+  cache->R = (int)floor(((double)(cache->RMinus - cache->F)/cache->S) + 1.0);
+  cache->C = (int)floor(((double)(cache->CMinus - cache->F)/cache->S) + 1.0);
   cache->W = NULL;
   cache->dW = NULL;
   cache->b = NULL;
@@ -91,8 +90,8 @@ void malloc_convLayerOutput(double **A_l, double **dA_l, convLayerCache *cache) 
   int m, r, c, k;
   free_convLayerOutput(*A_l, *dA_l);
 
-  *A_l = (double *)malloc(cache->M*cache->R*cache->C*cache->K*sizeof(double));
-  *dA_l = (double *)malloc(cache->M*cache->R*cache->C*cache->K*sizeof(double));
+  (*A_l) = (double *)malloc(cache->M*cache->R*cache->C*cache->K*sizeof(double));
+  (*dA_l) = (double *)malloc(cache->M*cache->R*cache->C*cache->K*sizeof(double));
   for (m = 0; m < cache->M; ++m) {
     for (r = 0; r < cache->R; ++r) {
       for (c = 0; c < cache->C; ++c) {
@@ -150,8 +149,9 @@ void forwardConvolution1X1(double *A_lMinus, double *A_l, convLayerCache *cache)
   for (m = 0; m < cache->M; ++m) {
     for (r = 0; r < cache->R; ++r) {
       for (c = 0; c < cache->C; ++c) {
-        for (k = 0; c < cache->K; ++k) {
+        for (k = 0; k < cache->K; ++k) {
 
+          cache->Z[k + cache->K*(c + cache->C*(r + cache->R*m))] = 0.0;
           for (kMinus = 0; kMinus < cache->KMinus; ++kMinus) {
             cache->Z[k + cache->K*(c + cache->C*(r + cache->R*m))] += cache->W[k + cache->K*kMinus]*A_lMinus[kMinus + cache->KMinus*(c*cache->S + cache->C*(r*cache->S + cache->R*m))];
           }
@@ -184,17 +184,16 @@ void backwardConvolution1X1(double *A_lMinus, double *dA_l, double *dA_lMinus, c
             dA_lMinus[pMinus + cache->KMinus*(c*cache->S + cache->CMinus*(r*cache->S + cache->RMinus*q))] += cache->dZ[k + cache->K*(c + cache->C*(r + cache->R*m))]*cache->W[k + cache->K*pMinus];
 
             cache->dW[p + cache->K*pMinus] += cache->dZ[k + cache->K*(c + cache->C*(r + cache->R*m))]*A_lMinus[pMinus + cache->KMinus*(c*cache->S + cache->CMinus*(r*cache->S + cache->RMinus*m))];
-          }
-          //}
-
-          dA_lMinus[pMinus + cache->KMinus*(c*cache->S + cache->CMinus*(r*cache->S + cache->RMinus*q))] += cache->dZ[k + cache->K*(c + cache->C*(r + cache->R*m))]*cache->W[k + cache->K*pMinus];
+          } // end for pMinus
+          //} // end for p
 
           cache->db[p] += cache->dZ[k + cache->K*(c + cache->C*(r + cache->R*m))];
 
-        }
-      }
-    }
-  }
+        } // end for m
+        //} end for q
+      } // end for k
+    } // end for c
+  } // end for r
 }
 
 void forwardConvolution(double *A_lMinus, double *A_l, convLayerCache *cache) {

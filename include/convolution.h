@@ -10,7 +10,6 @@ typedef struct convLayerCache_ {
   int      KMinus;         // Number of filters in layer l-1
   int      K;              // Number of filters in layer l
   int      S;              // Stride
-  int      P;              // Padding
   double  *W;              // Filter bank          : F X F X KMinus X K dimensional
   double  *dW;             // Filter bank gradient : F X F X KMinus X K dimensional
   double  *b;              // Bias bank            : K dimensional
@@ -19,7 +18,7 @@ typedef struct convLayerCache_ {
   double  *dZ;             // Intermediate         : R X C X K
 } convLayerCache;
 
-void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K, int S, int P, convLayerCache *cache);
+void init_convLayerCache(int M, int RMinus, int CMinus, int KMinus, int F, int K, int S, convLayerCache *cache);
 
 void malloc_convLayerCache(convLayerCache *cache);
 
